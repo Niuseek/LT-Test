@@ -11,15 +11,25 @@ namespace LT_Test.Loggers
     {
         private string _filePath;
 
+        private readonly ConsoleLogger _fallbackLogger = new();
+
         public FileLogger(string filePath)
         {
             _filePath = filePath;
         }
 
-        public Task LogAsync(string message)
+        public async Task LogAsync(string message)
         {
             string formattedMessage = $"[File Log] {DateTime.Now}: {message}{Environment.NewLine}";
-            return File.AppendAllTextAsync(_filePath, formattedMessage);
+
+            try
+            {
+                await File.AppendAllTextAsync(_filePath, formattedMessage);
+            }
+            catch (Exception ex)
+            {
+                await _fallbackLogger.LogAsync($"[File Log] Failed to write to file: {_filePath}. Exception: {ex.Message}");
+            }
         }
     }
 }

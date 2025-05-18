@@ -12,6 +12,7 @@ namespace LT_Test.Loggers
     public class TCPLogger : ILogger
     {
         private readonly IPEndPoint ipEndPoint;
+        private readonly ConsoleLogger _fallbackLogger = new();
 
         public TCPLogger(string ip, int port)
         {
@@ -38,15 +39,15 @@ namespace LT_Test.Loggers
 
                 await using NetworkStream stream = client.GetStream();
 
-                string formattedMessage = $"[TCP Log] {DateTime.Now}: {message}\n";
+                string formattedMessage = $"[TCP Log] {DateTime.Now}: {message}{Environment.NewLine}";
 
                 byte[] data = Encoding.UTF8.GetBytes(formattedMessage);
 
                 await stream.WriteAsync(data, 0, data.Length);
             }
-            catch
+            catch (Exception ex)
             {
-                await Task.Run(() => Console.WriteLine($"Error: Unable to connect to {ipEndPoint.Address}:{ipEndPoint.Port}"));
+                await _fallbackLogger.LogAsync($"[TCP Log] Error: Unable to connect to {ipEndPoint.Address}:{ipEndPoint.Port}. Exception: {ex.Message}");
             }
         }
     }
