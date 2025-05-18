@@ -1,10 +1,12 @@
 # LT-Test
-Manual
+# H2 Manual
 
-How to build
+**How to build**
+
 Current library implementation doesn’t use any external libraries apart from xUnit (for unit testing), so the only thing that is needed is a fresh C# Net 8.0 project.
 
-Integration
+**Integration**
+
 Just add the library to a console project and you can use following to test the code to test it. File logger will create a file in the binary location, unless path is specified.
 
 ```
