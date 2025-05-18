@@ -18,11 +18,11 @@ namespace LT_Test.Loggers
 
         public Task LogAsync(string message)
         {
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 using (StreamWriter writer = new StreamWriter(_filePath, true))
                 {
-                    writer.WriteLine($"{DateTime.Now}: {message}");
+                    await writer.WriteLineAsync($"[File Log] {DateTime.Now}: {message}");
                 }
             });
         }

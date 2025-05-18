@@ -11,7 +11,7 @@ namespace LT_Test.Loggers
     {
         public Task LogAsync(string message)
         {
-            return Task.Run(() => Console.WriteLine($"{DateTime.Now}: {message}"));
+            return Task.Run(() => Console.WriteLine($"[Console Log] {DateTime.Now}: {message}"));
         }
     }
 }
