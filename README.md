@@ -6,6 +6,8 @@ Current library implementation doesn’t use any external libraries apart from x
 
 Integration
 Just add the library to a console project and you can use following to test the code to test it. File logger will create a file in the binary location, unless path is specified.
+
+```
 using LT_Test;
 using LT_Test.Loggers;
 
@@ -28,3 +30,4 @@ logger.RegisterLogger(fileLogger);
 logger.RegisterLogger(TCPLogger);
 
 await logger.LogAsync("This is a test message using all registered loggers.");
+```
