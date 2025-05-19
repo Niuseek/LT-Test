@@ -1,5 +1,5 @@
 # LT-Test
-# H2 Manual
+## Manual
 
 **How to build**
 
