@@ -9,9 +9,16 @@ namespace LT_Test.Loggers
 {
     public class ConsoleLogger : ILogger
     {
+        private static readonly object ConsoleLock = new object();
+
         public Task LogAsync(string message)
         {
-            return Task.Run(() => Console.WriteLine($"[Console Log] {DateTime.Now}: {message}"));
+            lock (ConsoleLock)
+            {
+                Console.WriteLine(message);
+            }
+
+            return Task.CompletedTask;
         }
     }
 }
