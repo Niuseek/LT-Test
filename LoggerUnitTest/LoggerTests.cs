@@ -28,6 +28,28 @@ namespace LoggerUnitTest
             Assert.Contains(testMessage, logContent, StringComparison.OrdinalIgnoreCase);
         }
 
+        [Fact]
+        public async Task Logger_WritesToFileLogger()
+        {
+            var tempFilePath = Path.GetTempFileName();
+            var fileLogger = new FileLogger(tempFilePath);
+            var logger = new Logger();
+
+            logger.RegisterLogger(fileLogger);
+
+            var testMessage = "This is a file logger test";
+
+            await logger.LogAsync(testMessage);
+            await logger.FlushAsync();
+
+            string fileContent = await File.ReadAllTextAsync(tempFilePath);
+            Assert.Contains(testMessage, fileContent);
+
+            await logger.DisposeAsync();
+            fileLogger.Dispose();
+            File.Delete(tempFilePath);
+        }
+
         public void Dispose()
         {
             if (File.Exists(_testFilePath))
