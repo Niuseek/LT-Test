@@ -1,6 +1,7 @@
 ﻿using LT_Test.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -9,46 +10,103 @@ using System.Threading.Tasks;
 
 namespace LT_Test.Loggers
 {
-    public class TCPLogger : ILogger
+    public class TCPLogger : ILogger, IDisposable
     {
         private readonly IPEndPoint ipEndPoint;
-        private readonly ConsoleLogger _fallbackLogger = new();
+        private readonly ILogger fallbackLogger;
+        private TcpClient? client;
+        private NetworkStream? stream;
+        private readonly SemaphoreSlim writeLock = new(1, 1);
+        private bool disposed = false;
 
-        public TCPLogger(string ip, int port)
-        {
-            ipEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
-        }
+        public TCPLogger(string ip, int port, ILogger? _fallbackLogger = null)
+        : this(new IPEndPoint(IPAddress.Parse(ip), port), _fallbackLogger) { }
 
-        public TCPLogger(IPAddress ip, int port)
-        {
-            ipEndPoint = new IPEndPoint(ip, port);
-        }
+        public TCPLogger(IPAddress ip, int port, ILogger? _fallbackLogger = null)
+            : this(new IPEndPoint(ip, port), _fallbackLogger) { }
 
-        public TCPLogger(IPEndPoint _ipEndPoint)
+        public TCPLogger(IPEndPoint _ipEndPoint, ILogger? _fallbackLogger = null)
         {
-            ipEndPoint = _ipEndPoint;
+            ipEndPoint = _ipEndPoint ?? throw new ArgumentNullException(nameof(ipEndPoint));
+            fallbackLogger = _fallbackLogger ?? new ConsoleLogger();
         }
 
         public async Task LogAsync(string message)
         {
+            if (disposed || string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            string formattedMessage = $"[TCP Log] {message}{Environment.NewLine}";
+            byte[] data = Encoding.UTF8.GetBytes(formattedMessage);
+
+            await writeLock.WaitAsync();
+
             try
             {
-                using TcpClient client = new();
+                await EnsureConnectedAsync();
 
-                await client.ConnectAsync(ipEndPoint);
-
-                await using NetworkStream stream = client.GetStream();
-
-                string formattedMessage = $"[TCP Log] {DateTime.Now}: {message}{Environment.NewLine}";
-
-                byte[] data = Encoding.UTF8.GetBytes(formattedMessage);
-
-                await stream.WriteAsync(data, 0, data.Length);
+                if (stream != null && stream.CanWrite)
+                {
+                    await stream.WriteAsync(data, 0, data.Length);
+                }
             }
             catch (Exception ex)
             {
-                await _fallbackLogger.LogAsync($"[TCP Log] Error: Unable to connect to {ipEndPoint.Address}:{ipEndPoint.Port}. Exception: {ex.Message}");
+                await fallbackLogger.LogAsync($"[TCP Log] Error: {ex.Message}");
+                CleanupConnection();
             }
+            finally
+            {
+                writeLock.Release();
+            }
+        }
+
+        private async Task EnsureConnectedAsync()
+        {
+            if (client?.Connected == true)
+            {
+                return;
+            }
+
+            CleanupConnection();
+
+            client = new TcpClient();
+            await client.ConnectAsync(ipEndPoint);
+            stream = client.GetStream();
+        }
+
+        private void CleanupConnection()
+        {
+            try
+            {
+                stream?.Dispose();
+                client?.Close();
+            }
+            catch
+            {
+                // intentionally swallow exception as we're cleaning up connection
+            }
+
+            stream = null;
+            client = null;
+        }
+
+        public void Dispose()
+        {
+            disposed = true;
+            writeLock.Wait();
+
+            CleanupConnection();
+            writeLock.Dispose();
+
+            if (fallbackLogger is IDisposable d)
+            {
+                d.Dispose();
+            }
+
+            GC.SuppressFinalize(this);
         }
     }
 }

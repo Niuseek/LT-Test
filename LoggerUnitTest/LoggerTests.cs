@@ -17,7 +17,7 @@ namespace LoggerUnitTest
         {
             string testMessage = "Test file logger.";
 
-            var fileLogger = new FileLogger(_testFilePath);
+            var fileLogger = new FileLogger(_testFilePath, new ConsoleLogger());
 
             await fileLogger.LogAsync(testMessage);
 

@@ -14,16 +14,8 @@ using LT_Test;
 using LT_Test.Loggers;
 
 var consoleLogger = new ConsoleLogger();
-await consoleLogger.LogAsync("This is a test console message.");
-
 var fileLogger = new FileLogger("log.txt");
-await fileLogger.LogAsync("This is a file log message.");
-await fileLogger.LogAsync("This is a file log message 2.");
-
-var TCPLogger = new TCPLogger("127.0.0.1", 4444);
-await TCPLogger.LogAsync("This is a TCP log message.");
-await TCPLogger.LogAsync("This is a TCP log message 2.");
-
+var TCPLogger = new TCPLogger("127.0.0.1", 4222);
 
 Logger logger = new Logger();
 
@@ -31,5 +23,10 @@ logger.RegisterLogger(consoleLogger);
 logger.RegisterLogger(fileLogger);
 logger.RegisterLogger(TCPLogger);
 
-await logger.LogAsync("This is a test message using all registered loggers.");
+for (int i = 1; i <= 200; i++)
+{
+    await logger.LogAsync($"This is a test message to all registered loggers {i}");
+}
+
+await logger.FlushAsync();
 ```
