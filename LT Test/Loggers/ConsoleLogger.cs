@@ -15,7 +15,7 @@ namespace LT_Test.Loggers
         {
             lock (ConsoleLock)
             {
-                Console.WriteLine(message);
+                Console.WriteLine($"[Console Log] {message}");
             }
 
             return Task.CompletedTask;
